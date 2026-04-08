@@ -21,7 +21,15 @@ def create_comment(post_id: str, author_id: str, content: str):
         .insert({"post_id": post_id, "author_id": author_id, "content": content})
         .execute()
     )
-    return result.data[0]
+    comment_id = result.data[0]["id"]
+    full_result = (
+        supabase.table("comments")
+        .select("*, users(nickname, profile_image)")
+        .eq("id", comment_id)
+        .single()
+        .execute()
+    )
+    return full_result.data
 
 
 def update_comment(comment_id: str, author_id: str, content: str):
