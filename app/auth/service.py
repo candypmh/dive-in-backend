@@ -8,7 +8,6 @@ from app.config import (
     SUPABASE_SERVICE_KEY,
     KAKAO_APP_KEY,
     KAKAO_CLIENT_SECRET,
-    KAKAO_REDIRECT_URI,
     JWT_SECRET_KEY,
     JWT_ALGORITHM,
 )
@@ -19,7 +18,7 @@ KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token"
 KAKAO_USER_URL = "https://kapi.kakao.com/v2/user/me"
 
 
-async def kakao_login(code: str):
+async def kakao_login(code: str, redirect_uri: str):
     # 1. code → 카카오 access_token 교환
     async with httpx.AsyncClient() as client:
         token_res = await client.post(
@@ -27,7 +26,7 @@ async def kakao_login(code: str):
             data={
                 "grant_type": "authorization_code",
                 "client_id": KAKAO_APP_KEY,
-                "redirect_uri": KAKAO_REDIRECT_URI,
+                "redirect_uri": redirect_uri,
                 "code": code,
                 "client_secret": KAKAO_CLIENT_SECRET,
             },
