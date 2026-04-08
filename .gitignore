@@ -20,3 +20,8 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+
+# 클로드
+claude.md
+/Claude-Work
+.claude/

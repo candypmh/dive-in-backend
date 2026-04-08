@@ -6,10 +6,26 @@ from app.comments import service
 router = APIRouter()
 
 
+def _transform_comment(comment: dict) -> dict:
+    users = comment.get("users") or {}
+    profile_image = users.get("profile_image") or None
+    return {
+        "cmntId": comment["id"],
+        "content": comment.get("content", ""),
+        "groupName": 0,
+        "orderNumber": 0,
+        "cmntClass": 0,
+        "writer": users.get("nickname", ""),
+        "writerProfile": profile_image,
+        "likeCnt": 0,
+        "createdAt": comment.get("created_at", ""),
+    }
+
+
 @router.get("/posts/{post_id}/comments")
 def list_comments(post_id: str):
     comments = service.get_comments(post_id)
-    return {"comments": comments}
+    return {"comments": [_transform_comment(c) for c in comments]}
 
 
 @router.post("/posts/{post_id}/comments")

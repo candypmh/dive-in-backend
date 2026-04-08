@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from app.auth.service import kakao_login
+from app.auth.service import kakao_login, supabase
 from app.auth.middleware import get_auth_user
 
 router = APIRouter()
@@ -18,26 +17,16 @@ async def kakao_auth(body: KakaoLoginRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    response = JSONResponse(
-        content={"message": "로그인 성공", "user": {"id": user["id"], "nickname": user["nickname"]}}
-    )
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        samesite="lax",
-        max_age=60 * 60 * 8,  # 8시간
-    )
-    return response
+    return {"accessToken": access_token, "user": {"id": user["id"], "nickname": user["nickname"]}}
 
 
 @router.post("/logout")
 def logout():
-    response = JSONResponse(content={"message": "로그아웃 성공"})
-    response.delete_cookie("access_token")
-    return response
+    return {"message": "로그아웃 성공"}
 
 
 @router.get("/user")
 def get_user(current_user: dict = Depends(get_auth_user)):
-    return {"user": current_user}
+    user_id = current_user["sub"]
+    result = supabase.table("users").select("id, nickname, profile_image").eq("id", user_id).single().execute()
+    return {"user": result.data}
