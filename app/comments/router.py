@@ -35,7 +35,7 @@ def create_comment(post_id: str, body: CommentCreate, current_user: dict = Depen
         author_id=current_user["sub"],
         content=body.content,
     )
-    return {"comment": comment}
+    return {"comment": _transform_comment(comment)}
 
 
 @router.put("/posts/{post_id}/comments/{comment_id}")
