@@ -7,9 +7,11 @@ from app.config import FRONTEND_URL
 
 app = FastAPI(title="Dive-In API")
 
+allow_origins = [origin.strip() for origin in FRONTEND_URL.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
