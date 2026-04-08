@@ -8,12 +8,13 @@ router = APIRouter()
 
 class KakaoLoginRequest(BaseModel):
     code: str
+    redirect_uri: str
 
 
 @router.post("/kakao")
 async def kakao_auth(body: KakaoLoginRequest):
     try:
-        access_token, user = await kakao_login(body.code)
+        access_token, user = await kakao_login(body.code, body.redirect_uri)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
