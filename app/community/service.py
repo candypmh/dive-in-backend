@@ -5,7 +5,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 
 def get_communities(category: str = None, page: int = 0, page_size: int = 10):
-    query = supabase.table("communities").select("*, users(nickname, profile_image)")
+    query = supabase.table("communities").select("*, users(nickname, profile_image)", count="exact")
 
     if category and category != "none":
         query = query.eq("category", category)
@@ -15,7 +15,7 @@ def get_communities(category: str = None, page: int = 0, page_size: int = 10):
         .range(page * page_size, (page + 1) * page_size - 1)
         .execute()
     )
-    return result.data
+    return result.data, result.count
 
 
 def get_community(post_id: str):
