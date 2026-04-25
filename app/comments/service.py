@@ -37,13 +37,16 @@ def update_comment(comment_id: str, author_id: str, content: str):
     if existing.data["author_id"] != author_id:
         raise Exception("수정 권한이 없습니다")
 
+    supabase.table("comments").update({"content": content}).eq("id", comment_id).execute()
+
     result = (
         supabase.table("comments")
-        .update({"content": content})
+        .select("*, users(nickname, profile_image)")
         .eq("id", comment_id)
+        .single()
         .execute()
     )
-    return result.data[0]
+    return result.data
 
 
 def delete_comment(comment_id: str, author_id: str):

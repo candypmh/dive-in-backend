@@ -16,6 +16,7 @@ def _transform_comment(comment: dict) -> dict:
         "orderNumber": 0,
         "cmntClass": 0,
         "writer": users.get("nickname", ""),
+        "writerId": comment.get("author_id", ""),
         "writerProfile": profile_image,
         "likeCnt": 0,
         "createdAt": comment.get("created_at", ""),
@@ -46,7 +47,7 @@ def update_comment(post_id: str, comment_id: str, body: CommentUpdate, current_u
             author_id=current_user["sub"],
             content=body.content,
         )
-        return {"comment": comment}
+        return {"comment": _transform_comment(comment)}
     except Exception as e:
         raise HTTPException(status_code=403, detail=str(e))
 
