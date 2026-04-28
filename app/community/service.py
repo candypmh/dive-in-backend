@@ -67,3 +67,34 @@ def delete_community(post_id: str, author_id: str):
         raise Exception("삭제 권한이 없습니다")
 
     supabase.table("communities").delete().eq("id", post_id).execute()
+
+
+def add_like(post_id: str, user_id: str):
+    supabase.table("likes").insert({"post_id": post_id, "user_id": user_id}).execute()
+
+
+def remove_like(post_id: str, user_id: str):
+    supabase.table("likes").delete().eq("post_id", post_id).eq("user_id", user_id).execute()
+
+
+def get_like_info(post_id: str, user_id: str = None):
+    count_result = (
+        supabase.table("likes")
+        .select("id", count="exact")
+        .eq("post_id", post_id)
+        .execute()
+    )
+    likes_cnt = count_result.count or 0
+
+    is_liked = False
+    if user_id:
+        liked_result = (
+            supabase.table("likes")
+            .select("id")
+            .eq("post_id", post_id)
+            .eq("user_id", user_id)
+            .execute()
+        )
+        is_liked = len(liked_result.data) > 0
+
+    return {"likesCnt": likes_cnt, "isLiked": is_liked}

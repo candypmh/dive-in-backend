@@ -31,10 +31,11 @@ def _transform_post(post: dict) -> dict:
     }
 
 
-def _transform_post_detail(post: dict, comments: list) -> dict:
+def _transform_post_detail(post: dict, comments: list, like_info: dict = None) -> dict:
     users = post.get("users") or {}
     images = post.get("images") or []
     profile_image = users.get("profile_image") or None
+    like_info = like_info or {"likesCnt": 0, "isLiked": False}
 
     transformed_images = [{"repImage": i == 0, "imageUrl": url} for i, url in enumerate(images)]
     transformed_comments = [_transform_comment(c) for c in comments]
@@ -45,15 +46,16 @@ def _transform_post_detail(post: dict, comments: list) -> dict:
         "title": post.get("title", ""),
         "content": post.get("content", ""),
         "images": transformed_images,
-        "likesCnt": 0,
+        "likesCnt": like_info["likesCnt"],
         "cmntCnt": len(transformed_comments),
         "viewCnt": 0,
         "writer": users.get("nickname", ""),
+        "writerId": post.get("author_id", ""),
         "writerProfile": profile_image,
         "createdAt": post.get("created_at", ""),
         "updatedAt": post.get("updated_at"),
         "isPopular": False,
-        "isLiked": False,
+        "isLiked": like_info["isLiked"],
         "commentList": transformed_comments,
     }
 
@@ -69,6 +71,7 @@ def _transform_comment(comment: dict) -> dict:
         "orderNumber": 0,
         "cmntClass": 0,
         "writer": users.get("nickname", ""),
+        "writerId": comment.get("author_id", ""),
         "writerProfile": profile_image,
         "likeCnt": 0,
         "createdAt": comment.get("created_at", ""),
@@ -97,7 +100,8 @@ def get_community(post_id: str):
     if not post:
         raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다")
     comments = comments_service.get_comments(post_id)
-    return {"data": _transform_post_detail(post, comments)}
+    like_info = service.get_like_info(post_id)
+    return {"data": _transform_post_detail(post, comments, like_info)}
 
 
 @router.post("/posts")
@@ -126,3 +130,20 @@ def delete_community(post_id: str, current_user: dict = Depends(get_auth_user)):
         return {"message": "삭제 완료"}
     except Exception as e:
         raise HTTPException(status_code=403, detail=str(e))
+
+
+@router.post("/posts/{post_id}/like")
+def like_post(post_id: str, current_user: dict = Depends(get_auth_user)):
+    try:
+        service.add_like(post_id=post_id, user_id=current_user["sub"])
+    except Exception:
+        pass  # 이미 좋아요한 경우 무시
+    like_info = service.get_like_info(post_id=post_id, user_id=current_user["sub"])
+    return {"isLiked": like_info["isLiked"], "likesCnt": like_info["likesCnt"]}
+
+
+@router.delete("/posts/{post_id}/like")
+def unlike_post(post_id: str, current_user: dict = Depends(get_auth_user)):
+    service.remove_like(post_id=post_id, user_id=current_user["sub"])
+    like_info = service.get_like_info(post_id=post_id, user_id=current_user["sub"])
+    return {"isLiked": like_info["isLiked"], "likesCnt": like_info["likesCnt"]}
