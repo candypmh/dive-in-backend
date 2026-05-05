@@ -148,9 +148,9 @@ def unlike_post(post_id: str, current_user: dict = Depends(get_auth_user)):
     return {"isLiked": like_info["isLiked"], "likesCnt": like_info["likesCnt"]}
 
 @router.post("/upload")
-async def upload_images(file: UploadFile = File(...), current_user: dict = Depends(get_auth_user)):
+async def upload_image(file: UploadFile = File(...), current_user: dict = Depends(get_auth_user)):
   try: 
-    image_urls = await service.upload_images(file)
+    image_urls = await service.upload_image(file)
     return {"imageUrls": image_urls}
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
