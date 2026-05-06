@@ -1,11 +1,13 @@
 from supabase import create_client
 from app.config import SUPABASE_URL, SUPABASE_SERVICE_KEY
+import uuid
 
 supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 
 def get_communities(category: str = None, page: int = 0, page_size: int = 10):
-    query = supabase.table("communities").select("*, users(nickname, profile_image)", count="exact")
+    query = supabase.table("communities").select(
+        "*, users(nickname, profile_image)", count="exact")
 
     if category and category != "none":
         query = query.eq("category", category)
@@ -43,10 +45,26 @@ def create_community(author_id: str, data: dict):
     )
     return result.data[0]
 
+# supabase storage에 이미지 업로드
+async def upload_image(file) -> str:
+    content = await file.read()
+    ext = file.filename.split(".")[-1]
+    path = f"{uuid.uuid4()}.{ext}"
+
+    supabase.storage.from_("community-images").upload(
+        path=path,
+        file=content,
+        file_options={"content-type": file.content_type}
+    )
+    public_url = supabase.storage.from_(
+        "community-images").get_public_url(path)
+    return public_url
+
 
 def update_community(post_id: str, author_id: str, data: dict):
     # 작성자 검증
-    existing = supabase.table("communities").select("author_id").eq("id", post_id).single().execute()
+    existing = supabase.table("communities").select(
+        "author_id").eq("id", post_id).single().execute()
     if existing.data["author_id"] != author_id:
         raise Exception("수정 권한이 없습니다")
 
@@ -62,7 +80,8 @@ def update_community(post_id: str, author_id: str, data: dict):
 
 def delete_community(post_id: str, author_id: str):
     # 작성자 검증
-    existing = supabase.table("communities").select("author_id").eq("id", post_id).single().execute()
+    existing = supabase.table("communities").select(
+        "author_id").eq("id", post_id).single().execute()
     if existing.data["author_id"] != author_id:
         raise Exception("삭제 권한이 없습니다")
 
@@ -70,11 +89,13 @@ def delete_community(post_id: str, author_id: str):
 
 
 def add_like(post_id: str, user_id: str):
-    supabase.table("likes").insert({"post_id": post_id, "user_id": user_id}).execute()
+    supabase.table("likes").insert(
+        {"post_id": post_id, "user_id": user_id}).execute()
 
 
 def remove_like(post_id: str, user_id: str):
-    supabase.table("likes").delete().eq("post_id", post_id).eq("user_id", user_id).execute()
+    supabase.table("likes").delete().eq(
+        "post_id", post_id).eq("user_id", user_id).execute()
 
 
 def get_like_info(post_id: str, user_id: str = None):

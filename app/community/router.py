@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from app.auth.middleware import get_auth_user
 from app.community.schema import CommunityCreate, CommunityUpdate
 from app.community import service
@@ -122,7 +122,6 @@ def update_community(post_id: str, body: CommunityUpdate, current_user: dict = D
     except Exception as e:
         raise HTTPException(status_code=403, detail=str(e))
 
-
 @router.delete("/posts/{post_id}")
 def delete_community(post_id: str, current_user: dict = Depends(get_auth_user)):
     try:
@@ -147,3 +146,11 @@ def unlike_post(post_id: str, current_user: dict = Depends(get_auth_user)):
     service.remove_like(post_id=post_id, user_id=current_user["sub"])
     like_info = service.get_like_info(post_id=post_id, user_id=current_user["sub"])
     return {"isLiked": like_info["isLiked"], "likesCnt": like_info["likesCnt"]}
+
+@router.post("/upload")
+async def upload_image(file: UploadFile = File(...), current_user: dict = Depends(get_auth_user)):
+  try: 
+    image_urls = await service.upload_image(file)
+    return {"imageUrls": image_urls}
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
