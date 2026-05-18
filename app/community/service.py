@@ -119,3 +119,49 @@ def get_like_info(post_id: str, user_id: str = None):
         is_liked = len(liked_result.data) > 0
 
     return {"likesCnt": likes_cnt, "isLiked": is_liked}
+
+
+def search_posts(keyword: str, limit: int = 20):
+    result = (
+        supabase.table("communities")
+        .select("*, users(nickname, profile_image)")
+        .or_(f"title.ilike.%{keyword}%,content.ilike.%{keyword}%")
+        .order("created_at", desc=True)
+        .limit(limit)
+        .execute()
+    )
+    return result.data
+
+
+def get_top_view_posts(limit: int = 6):
+    result = (
+        supabase.table("communities")
+        .select("*, users(nickname, profile_image)")
+        .order("created_at", desc=True)
+        .limit(limit)
+        .execute()
+    )
+    return result.data
+
+
+def get_new_posts(limit: int = 6):
+    result = (
+        supabase.table("communities")
+        .select("*, users(nickname, profile_image)")
+        .order("created_at", desc=True)
+        .limit(limit)
+        .execute()
+    )
+    return result.data
+
+
+def get_competition_posts(limit: int = 6):
+    result = (
+        supabase.table("communities")
+        .select("*, users(nickname, profile_image)")
+        .eq("category", "COMPETITION")
+        .order("created_at", desc=True)
+        .limit(limit)
+        .execute()
+    )
+    return result.data

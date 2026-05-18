@@ -94,6 +94,18 @@ def list_communities(category: str = None, page: int = 0):
     }
 
 
+@router.get("/posts/search")
+def search_communities(keyword: str = ""):
+    if not keyword.strip():
+        return {"success": True, "message": None, "data": []}
+    posts = service.search_posts(keyword)
+    return {
+        "success": True,
+        "message": None,
+        "data": [_transform_post(p) for p in posts],
+    }
+
+
 @router.get("/posts/{post_id}")
 def get_community(post_id: str):
     post = service.get_community(post_id)
