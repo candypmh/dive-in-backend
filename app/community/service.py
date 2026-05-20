@@ -1,8 +1,5 @@
-from supabase import create_client
-from app.config import SUPABASE_URL, SUPABASE_SERVICE_KEY
 import uuid
-
-supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+from app.db import supabase
 
 
 def get_communities(category: str = None, page: int = 0, page_size: int = 10):
@@ -25,10 +22,9 @@ def get_community(post_id: str):
         supabase.table("communities")
         .select("*, users(nickname, profile_image)")
         .eq("id", post_id)
-        .single()
-        .execute()
+        .limit(1).execute()
     )
-    return result.data
+    return result.data[0] if result.data else None
 
 
 def create_community(author_id: str, data: dict):
@@ -62,10 +58,11 @@ async def upload_image(file) -> str:
 
 
 def update_community(post_id: str, author_id: str, data: dict):
-    # 작성자 검증
     existing = supabase.table("communities").select(
-        "author_id").eq("id", post_id).single().execute()
-    if existing.data["author_id"] != author_id:
+        "author_id").eq("id", post_id).limit(1).execute()
+    if not existing.data:
+        raise Exception("게시글을 찾을 수 없습니다")
+    if existing.data[0]["author_id"] != author_id:
         raise Exception("수정 권한이 없습니다")
 
     update_data = {k: v for k, v in data.items() if v is not None}
@@ -79,10 +76,11 @@ def update_community(post_id: str, author_id: str, data: dict):
 
 
 def delete_community(post_id: str, author_id: str):
-    # 작성자 검증
     existing = supabase.table("communities").select(
-        "author_id").eq("id", post_id).single().execute()
-    if existing.data["author_id"] != author_id:
+        "author_id").eq("id", post_id).limit(1).execute()
+    if not existing.data:
+        raise Exception("게시글을 찾을 수 없습니다")
+    if existing.data[0]["author_id"] != author_id:
         raise Exception("삭제 권한이 없습니다")
 
     supabase.table("communities").delete().eq("id", post_id).execute()

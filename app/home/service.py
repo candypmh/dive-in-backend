@@ -1,8 +1,5 @@
-from supabase import create_client
-from app.config import SUPABASE_URL, SUPABASE_SERVICE_KEY
+from app.db import supabase
 from app.community import service as community_service
-
-supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 _LESSON_CARD_COLS = (
     "id, lesson_name, level, keyword, price, "

@@ -1,7 +1,4 @@
-from supabase import create_client
-from app.config import SUPABASE_URL, SUPABASE_SERVICE_KEY
-
-supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+from app.db import supabase
 
 
 def get_comments(post_id: str):
@@ -26,15 +23,16 @@ def create_comment(post_id: str, author_id: str, content: str):
         supabase.table("comments")
         .select("*, users(nickname, profile_image)")
         .eq("id", comment_id)
-        .single()
-        .execute()
+        .limit(1).execute()
     )
-    return full_result.data
+    return full_result.data[0] if full_result.data else None
 
 
 def update_comment(comment_id: str, author_id: str, content: str):
-    existing = supabase.table("comments").select("author_id").eq("id", comment_id).single().execute()
-    if existing.data["author_id"] != author_id:
+    existing = supabase.table("comments").select("author_id").eq("id", comment_id).limit(1).execute()
+    if not existing.data:
+        raise Exception("댓글을 찾을 수 없습니다")
+    if existing.data[0]["author_id"] != author_id:
         raise Exception("수정 권한이 없습니다")
 
     supabase.table("comments").update({"content": content}).eq("id", comment_id).execute()
@@ -43,15 +41,16 @@ def update_comment(comment_id: str, author_id: str, content: str):
         supabase.table("comments")
         .select("*, users(nickname, profile_image)")
         .eq("id", comment_id)
-        .single()
-        .execute()
+        .limit(1).execute()
     )
-    return result.data
+    return result.data[0] if result.data else None
 
 
 def delete_comment(comment_id: str, author_id: str):
-    existing = supabase.table("comments").select("author_id").eq("id", comment_id).single().execute()
-    if existing.data["author_id"] != author_id:
+    existing = supabase.table("comments").select("author_id").eq("id", comment_id).limit(1).execute()
+    if not existing.data:
+        raise Exception("댓글을 찾을 수 없습니다")
+    if existing.data[0]["author_id"] != author_id:
         raise Exception("삭제 권한이 없습니다")
 
     supabase.table("comments").delete().eq("id", comment_id).execute()
