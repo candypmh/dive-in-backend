@@ -89,3 +89,26 @@ def get_user_by_id(user_id: str):
         .limit(1).execute()
     )
     return result.data[0] if result.data else None
+
+
+def update_user(user_id: str, nickname: str, profile_image=None):
+    update_data = {"nickname": nickname}
+
+    if profile_image:
+        file_bytes = profile_image.file.read()
+        path = f"user-{user_id}/{profile_image.filename}"
+        supabase.storage.from_("profile-images").upload(
+            path,
+            file_bytes,
+            {"content-type": profile_image.content_type, "upsert": "true"},
+        )
+        image_url = supabase.storage.from_("profile-images").get_public_url(path)
+        update_data["profile_image"] = image_url
+
+    result = (
+        supabase.table("users")
+        .update(update_data)
+        .eq("id", user_id)
+        .execute()
+    )
+    return result.data[0] if result.data else None
