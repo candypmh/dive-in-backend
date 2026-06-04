@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Form, UploadFile, File
+from typing import Optional
 from pydantic import BaseModel
-from app.auth.service import kakao_login, supabase
+from app.auth.service import kakao_login, get_user_by_id, update_user
 from app.auth.middleware import get_auth_user
 
 router = APIRouter()
@@ -29,5 +30,19 @@ def logout():
 @router.get("/user")
 def get_user(current_user: dict = Depends(get_auth_user)):
     user_id = current_user["sub"]
-    result = supabase.table("users").select("id, nickname, profile_image").eq("id", user_id).single().execute()
-    return {"user": result.data}
+    user = get_user_by_id(user_id)
+    return {"user": user}
+
+
+@router.put("/user")
+async def update_user_profile(
+    nickname: str = Form(...),
+    profile_image: Optional[UploadFile] = File(None),
+    current_user: dict = Depends(get_auth_user),
+):
+    user_id = current_user["sub"]
+    try:
+        updated = await update_user(user_id, nickname, profile_image)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    return {"user": updated}

@@ -132,6 +132,8 @@ def update_community(post_id: str, body: CommunityUpdate, current_user: dict = D
         )
         return {"post": post}
     except Exception as e:
+        if "찾을 수 없습니다" in str(e):
+            raise HTTPException(status_code=404, detail=str(e))
         raise HTTPException(status_code=403, detail=str(e))
 
 @router.delete("/posts/{post_id}")
@@ -140,6 +142,8 @@ def delete_community(post_id: str, current_user: dict = Depends(get_auth_user)):
         service.delete_community(post_id=post_id, author_id=current_user["sub"])
         return {"message": "삭제 완료"}
     except Exception as e:
+        if "찾을 수 없습니다" in str(e):
+            raise HTTPException(status_code=404, detail=str(e))
         raise HTTPException(status_code=403, detail=str(e))
 
 

@@ -21,7 +21,8 @@ __pycache__/
 dist/
 build/
 
-# 클로드
+# ai관련
 claude.md
 /Claude-Work
 .claude/
+AGENTS.md

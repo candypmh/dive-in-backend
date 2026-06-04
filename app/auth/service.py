@@ -1,18 +1,14 @@
 import httpx
 from datetime import datetime, timedelta
 from jose import jwt
-from supabase import create_client
 
 from app.config import (
-    SUPABASE_URL,
-    SUPABASE_SERVICE_KEY,
     KAKAO_APP_KEY,
     KAKAO_CLIENT_SECRET,
     JWT_SECRET_KEY,
     JWT_ALGORITHM,
 )
-
-supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+from app.db import supabase
 
 KAKAO_TOKEN_URL = "https://kauth.kakao.com/oauth/token"
 KAKAO_USER_URL = "https://kapi.kakao.com/v2/user/me"
@@ -83,3 +79,36 @@ def _create_access_token(data: dict, expires_hours: int = 8) -> str:
 def get_current_user(token: str) -> dict:
     payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
     return payload
+
+
+def get_user_by_id(user_id: str):
+    result = (
+        supabase.table("users")
+        .select("id, nickname, profile_image")
+        .eq("id", user_id)
+        .limit(1).execute()
+    )
+    return result.data[0] if result.data else None
+
+
+async def update_user(user_id: str, nickname: str, profile_image=None):
+    update_data = {"nickname": nickname}
+
+    if profile_image:
+        file_bytes = await profile_image.read()
+        path = f"user-{user_id}/{profile_image.filename}"
+        supabase.storage.from_("profile-images").upload(
+            path,
+            file_bytes,
+            {"content-type": profile_image.content_type, "upsert": "true"},
+        )
+        image_url = supabase.storage.from_("profile-images").get_public_url(path)
+        update_data["profile_image"] = image_url
+
+    result = (
+        supabase.table("users")
+        .update(update_data)
+        .eq("id", user_id)
+        .execute()
+    )
+    return result.data[0] if result.data else None
