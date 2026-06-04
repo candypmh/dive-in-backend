@@ -91,11 +91,11 @@ def get_user_by_id(user_id: str):
     return result.data[0] if result.data else None
 
 
-def update_user(user_id: str, nickname: str, profile_image=None):
+async def update_user(user_id: str, nickname: str, profile_image=None):
     update_data = {"nickname": nickname}
 
     if profile_image:
-        file_bytes = profile_image.file.read()
+        file_bytes = await profile_image.read()
         path = f"user-{user_id}/{profile_image.filename}"
         supabase.storage.from_("profile-images").upload(
             path,

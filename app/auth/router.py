@@ -42,7 +42,7 @@ async def update_user_profile(
 ):
     user_id = current_user["sub"]
     try:
-        updated = update_user(user_id, nickname, profile_image)
+        updated = await update_user(user_id, nickname, profile_image)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     return {"user": updated}
