@@ -27,6 +27,17 @@ def get_community(post_id: str):
     return result.data[0] if result.data else None
 
 
+def increment_community_view_count(post_id: int) -> int | None:
+    result = supabase.rpc(
+        "increment_community_view_count",
+        {"p_post_id": post_id},
+    ).execute()
+    data = result.data
+    if isinstance(data, list):
+        data = data[0] if data else None
+    return int(data) if data is not None else None
+
+
 def create_community(author_id: str, data: dict):
     result = (
         supabase.table("communities")
@@ -135,6 +146,7 @@ def get_top_view_posts(limit: int = 6):
     result = (
         supabase.table("communities")
         .select("*, users(nickname, profile_image)")
+        .order("view_cnt", desc=True)
         .order("created_at", desc=True)
         .limit(limit)
         .execute()

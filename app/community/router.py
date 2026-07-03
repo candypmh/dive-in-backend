@@ -22,7 +22,7 @@ def _transform_post(post: dict) -> dict:
         "image": first_image,
         "likesCnt": 0,
         "cmntCnt": 0,
-        "viewCnt": 0,
+        "viewCnt": post.get("view_cnt", 0),
         "writer": users.get("nickname", ""),
         "writerProfile": profile_image,
         "createdAt": post.get("created_at", ""),
@@ -48,7 +48,7 @@ def _transform_post_detail(post: dict, comments: list, like_info: dict = None) -
         "images": transformed_images,
         "likesCnt": like_info["likesCnt"],
         "cmntCnt": len(transformed_comments),
-        "viewCnt": 0,
+        "viewCnt": post.get("view_cnt", 0),
         "writer": users.get("nickname", ""),
         "writerId": post.get("author_id", ""),
         "writerProfile": profile_image,
@@ -111,9 +111,26 @@ def get_community(post_id: str):
     post = service.get_community(post_id)
     if not post:
         raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다")
+
     comments = comments_service.get_comments(post_id)
     like_info = service.get_like_info(post_id)
+
+    view_cnt = service.increment_community_view_count(int(post_id))
+    if view_cnt is None:
+        raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다")
+
+    post["view_cnt"] = view_cnt
     return {"data": _transform_post_detail(post, comments, like_info)}
+
+
+@router.get("/posts/{post_id}/edit")
+def get_community_for_edit(post_id: str, current_user: dict = Depends(get_auth_user)):
+    post = service.get_community(post_id)
+    if not post:
+        raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다")
+    if post.get("author_id") != current_user["sub"]:
+        raise HTTPException(status_code=403, detail="수정 권한이 없습니다")
+    return {"data": _transform_post_detail(post, [], {"likesCnt": 0, "isLiked": False})}
 
 
 @router.post("/posts")
